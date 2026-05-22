@@ -63,16 +63,34 @@ void main() {
 
     vec2 sampleUV = vMidPoint + vec2(sampleP.x, -sampleP.y) * vScreenScale * 0.5;
 
-    sampleUV = clamp(sampleUV, 0.001, 0.999);
+    vec2 safeUV = clamp(sampleUV, 0.003, 0.997);
 
     // Chromatic aberration.
     float chromaStrength = smoothstep(0.0, 0.35, dist);
-    vec2 chromaOffset = normalize(sampleP + 0.00001) * chromaStrength * 0.0019;
+    vec2 edgeDist = min(sampleUV, 1.0 - sampleUV);
+    // Softer radial-style edge attenuation.
+    float edgeFade = length(edgeDist * 2.0);
+    edgeFade = smoothstep(0.0, 0.12, edgeFade);
+    // Prevent edge streaking from large refraction vectors.
+    float refractionFade = 1.0 - smoothstep(0.6, 1.4, length(sampleP));
+    vec2 chromaOffset = normalize(sampleP + 0.00001) * chromaStrength * edgeFade * refractionFade * 0.0019;
+
+    vec2 rUV = clamp(safeUV + chromaOffset, 0.003, 0.997);
+    vec2 gUV = safeUV;
+    vec2 bUV = clamp(safeUV - chromaOffset, 0.003, 0.997);
+
+    // Fade chromatic aberration when channels begin diverging near screen edges.
+    float chromaClipFade = 1.0 - smoothstep(0.0, 0.0025, distance(rUV, safeUV)) - smoothstep(0.0, 0.0025, distance(bUV, safeUV));
+
+    chromaClipFade = clamp(chromaClipFade, 0.0, 1.0);
+
+    rUV = mix(safeUV, rUV, chromaClipFade);
+    bUV = mix(safeUV, bUV, chromaClipFade);
 
     vec4 color;
-    color.r = texture2D(uBlurTex, sampleUV + chromaOffset).r;
-    color.g = texture2D(uBlurTex, sampleUV).g;
-    color.b = texture2D(uBlurTex, sampleUV - chromaOffset).b;
+    color.r = texture2D(uBlurTex, rUV).r;
+    color.g = texture2D(uBlurTex, gUV).g;
+    color.b = texture2D(uBlurTex, bUV).b;
     color.a = 1.0;
 
     // Noise.
