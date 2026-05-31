@@ -1,3 +1,18 @@
+package coolpit.util.render.shader.impl;
+
+import coolpit.util.math.MathUtil;
+import coolpit.util.render.shader.ShaderUtil;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.ScaledResolution;
+import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.renderer.OpenGlHelper;
+import net.minecraft.client.shader.Framebuffer;
+import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL13;
+
+import java.nio.FloatBuffer;
+
 /**
  * @author Jacques
  * @since 2026/05/15
@@ -78,7 +93,11 @@ public class LiquidGlass {
         mc.getFramebuffer().bindFramebuffer(true);
     }
 
-    public static void draw(float x, float y, float width, float height, float power, float noise, float refractionPower) {
+    public static void draw(float x, float y, float width, float height, float radius, float noise, float refractionPower) {
+        x = Math.round(x);
+        y = Math.round(y);
+        width = Math.round(width);
+        height = Math.round(height);
         liquidGlass.init();
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
         GlStateManager.bindTexture(blurFramebuffer.framebufferTexture);
@@ -96,11 +115,14 @@ public class LiquidGlass {
                 (width * scaledResolution.getScaleFactor()) / mc.displayWidth,
                 (height * scaledResolution.getScaleFactor()) / mc.displayHeight
         );
-        liquidGlass.setUniformf("uPower", power);
+        liquidGlass.setUniformf("uRadius", radius);
         liquidGlass.setUniformf("uNoise", noise);
         liquidGlass.setUniformf("uRefractionPower", refractionPower);
+        GlStateManager.enableBlend();
+        GlStateManager.tryBlendFuncSeparate(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ZERO);
         ShaderUtil.drawQuads(x, y, width, height);
         liquidGlass.unload();
         GlStateManager.color(1, 1, 1, 1);
         GlStateManager.bindTexture(0);
     }
+}
