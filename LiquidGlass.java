@@ -1,18 +1,3 @@
-package coolpit.util.render.shader.impl;
-
-import coolpit.util.math.MathUtil;
-import coolpit.util.render.shader.ShaderUtil;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.ScaledResolution;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.OpenGlHelper;
-import net.minecraft.client.shader.Framebuffer;
-import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL13;
-
-import java.nio.FloatBuffer;
-
 /**
  * @author Jacques
  * @since 2026/05/15
@@ -93,31 +78,19 @@ public class LiquidGlass {
         mc.getFramebuffer().bindFramebuffer(true);
     }
 
-    public static void draw(float x, float y, float width, float height, float radius, float noise, float refractionPower) {
-        x = Math.round(x);
-        y = Math.round(y);
-        width = Math.round(width);
-        height = Math.round(height);
+    public static void draw(float x, float y, float width, float height, float radius, float noise, float refractionPower, float glowWeight, float glowBias, float glowEdge0, float glowEdge1) {
         liquidGlass.init();
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
         GlStateManager.bindTexture(blurFramebuffer.framebufferTexture);
         liquidGlass.setUniformi("uBlurTex", 0);
-        liquidGlass.setUniformf("uResolution", mc.displayWidth, mc.displayHeight);
-        ScaledResolution scaledResolution = new ScaledResolution(mc);
-        liquidGlass.setUniformf("uGlassPixelSize", width * scaledResolution.getScaleFactor(), height * scaledResolution.getScaleFactor());
-        liquidGlass.setUniformf(
-                "uMidPoint",
-                (x + width * 0.5f) * scaledResolution.getScaleFactor() / mc.displayWidth * 2.0f - 1.0f,
-                1.0f - (y + height * 0.5f) * scaledResolution.getScaleFactor() / mc.displayHeight * 2.0f
-        );
-        liquidGlass.setUniformf(
-                "uQuadNDC2ScreenNDCScale",
-                (width * scaledResolution.getScaleFactor()) / mc.displayWidth,
-                (height * scaledResolution.getScaleFactor()) / mc.displayHeight
-        );
-        liquidGlass.setUniformf("uRadius", radius);
+        liquidGlass.setUniformf("uPowerFactor", radius);
         liquidGlass.setUniformf("uNoise", noise);
         liquidGlass.setUniformf("uRefractionPower", refractionPower);
+        liquidGlass.setUniformf("uGlowWeight", glowWeight);
+        liquidGlass.setUniformf("uGlowBias", glowBias);
+        liquidGlass.setUniformf("uGlowEdge0", glowEdge0);
+        liquidGlass.setUniformf("uGlowEdge1", glowEdge1);
+        liquidGlass.setUniformf("uQuadCenter", x + width * 0.5F, y + height * 0.5F);
         GlStateManager.enableBlend();
         GlStateManager.tryBlendFuncSeparate(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ZERO);
         ShaderUtil.drawQuads(x, y, width, height);
