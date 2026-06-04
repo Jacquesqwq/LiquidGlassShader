@@ -5,7 +5,8 @@
 public class LiquidGlass {
     private static final Minecraft mc = Minecraft.getMinecraft();
     private static final ShaderUtil gaussianBlur = new ShaderUtil("gaussianBlur.frag", "vertex.vsh");
-    private static final ShaderUtil liquidGlass = new ShaderUtil("liquidGlass.frag", "liquidGlass.vsh");
+    private static final ShaderUtil liquidGlassClear = new ShaderUtil("liquidGlassClear.frag", "liquidGlass.vsh");
+    private static final ShaderUtil liquidGlassTinted = new ShaderUtil("liquidGlassTinted.frag", "liquidGlass.vsh");
     private static Framebuffer framebuffer;
     private static Framebuffer blurFramebuffer;
 
@@ -22,7 +23,7 @@ public class LiquidGlass {
         OpenGlHelper.glUniform1(gaussianBlur.getUniform("weights"), weightBuffer);
     }
 
-    public static void updateBlurTexture(int iterations, float radius, float downScale) {
+    public static void updateBlurTexture(int iterations, float blurRadius, float downScale) {
         int width = (int) (mc.displayWidth * downScale);
         int height = (int) (mc.displayHeight * downScale);
         if (framebuffer == null || framebuffer.framebufferWidth != width || framebuffer.framebufferHeight != height) {
@@ -58,7 +59,7 @@ public class LiquidGlass {
             framebuffer.framebufferClear();
             framebuffer.bindFramebuffer(false);
             gaussianBlur.init();
-            setupGaussianUniforms(1, 0, radius);
+            setupGaussianUniforms(1, 0, blurRadius);
 
             GL11.glBindTexture(GL11.GL_TEXTURE_2D, i == 0 ? mc.getFramebuffer().framebufferTexture : blurFramebuffer.framebufferTexture);
             ShaderUtil.drawQuads();
@@ -68,7 +69,7 @@ public class LiquidGlass {
             blurFramebuffer.framebufferClear();
             blurFramebuffer.bindFramebuffer(false);
             gaussianBlur.init();
-            setupGaussianUniforms(0, 1, radius);
+            setupGaussianUniforms(0, 1, blurRadius);
 
             GL11.glBindTexture(GL11.GL_TEXTURE_2D, framebuffer.framebufferTexture);
             ShaderUtil.drawQuads();
@@ -78,23 +79,44 @@ public class LiquidGlass {
         mc.getFramebuffer().bindFramebuffer(true);
     }
 
-    public static void draw(float x, float y, float width, float height, float radius, float noise, float refractionPower, float glowWeight, float glowBias, float glowEdge0, float glowEdge1) {
-        liquidGlass.init();
+    public static void drawClear(float x, float y, float width, float height, float power, float noise, float refractionPower, float glowWeight, float glowBias, float glowEdge0, float glowEdge1) {
+        liquidGlassClear.init();
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
         GlStateManager.bindTexture(blurFramebuffer.framebufferTexture);
-        liquidGlass.setUniformi("uBlurTex", 0);
-        liquidGlass.setUniformf("uPowerFactor", radius);
-        liquidGlass.setUniformf("uNoise", noise);
-        liquidGlass.setUniformf("uRefractionPower", refractionPower);
-        liquidGlass.setUniformf("uGlowWeight", glowWeight);
-        liquidGlass.setUniformf("uGlowBias", glowBias);
-        liquidGlass.setUniformf("uGlowEdge0", glowEdge0);
-        liquidGlass.setUniformf("uGlowEdge1", glowEdge1);
-        liquidGlass.setUniformf("uQuadCenter", x + width * 0.5F, y + height * 0.5F);
+        liquidGlassClear.setUniformi("uBlurTex", 0);
+        liquidGlassClear.setUniformf("uPowerFactor", power);
+        liquidGlassClear.setUniformf("uNoise", noise);
+        liquidGlassClear.setUniformf("uRefractionPower", refractionPower);
+        liquidGlassClear.setUniformf("uGlowWeight", glowWeight);
+        liquidGlassClear.setUniformf("uGlowBias", glowBias);
+        liquidGlassClear.setUniformf("uGlowEdge0", glowEdge0);
+        liquidGlassClear.setUniformf("uGlowEdge1", glowEdge1);
+        liquidGlassClear.setUniformf("uQuadCenter", x + width * 0.5F, y + height * 0.5F);
         GlStateManager.enableBlend();
         GlStateManager.tryBlendFuncSeparate(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ZERO);
         ShaderUtil.drawQuads(x, y, width, height);
-        liquidGlass.unload();
+        liquidGlassClear.unload();
+        GlStateManager.color(1, 1, 1, 1);
+        GlStateManager.bindTexture(0);
+    }
+
+    public static void drawTinted(float x, float y, float width, float height, float power, float noise, float refractionPower, float tintR, float tintG, float tintB, float tintStrength, float chromaStrength, float darkness) {
+        liquidGlassTinted.init();
+        GL13.glActiveTexture(GL13.GL_TEXTURE0);
+        GlStateManager.bindTexture(blurFramebuffer.framebufferTexture);
+        liquidGlassTinted.setUniformi("uBlurTex", 0);
+        liquidGlassTinted.setUniformf("uPowerFactor", power);
+        liquidGlassTinted.setUniformf("uNoise", noise);
+        liquidGlassTinted.setUniformf("uRefractionPower", refractionPower);
+        liquidGlassTinted.setUniformf("uTintColor", tintR, tintG, tintB);
+        liquidGlassTinted.setUniformf("uTintStrength", tintStrength);
+        liquidGlassTinted.setUniformf("uChromaStrength", chromaStrength);
+        liquidGlassTinted.setUniformf("uDarkness", darkness);
+        liquidGlassTinted.setUniformf("uQuadCenter", x + width * 0.5F, y + height * 0.5F);
+        GlStateManager.enableBlend();
+        GlStateManager.tryBlendFuncSeparate(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ZERO);
+        ShaderUtil.drawQuads(x, y, width, height);
+        liquidGlassTinted.unload();
         GlStateManager.color(1, 1, 1, 1);
         GlStateManager.bindTexture(0);
     }
