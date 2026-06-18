@@ -48,4 +48,4 @@
 ```
 
 ## Usage
-[Usage Guide](USAGE.md)
+[Usage Guide](docs/USAGE.md)
