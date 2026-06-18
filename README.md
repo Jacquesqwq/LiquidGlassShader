@@ -16,5 +16,5 @@ Day
 Night
 <img width="1800" height="1169" alt="tinted_night" src="https://github.com/user-attachments/assets/744bb7db-25a5-4837-b170-2c0aa2d19db5" />
 
-## 🖥️ Usage
+## Usage
 [Usage Guide](USAGE.md)
