@@ -1,7 +1,7 @@
 # LiquidGlass
 #### liquid glass shader for Minecraft 1.8.9
 
-## 📸 Showcase
+## Showcase
 ### Liquid Glass v3 (Updating...)
 <img width="1800" height="1071" alt="liquid_glass_v3" src="https://github.com/user-attachments/assets/e1620432-c31e-4b92-8ea5-535cb6b0af07" />
 
